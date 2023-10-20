@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/task.dart';
@@ -16,9 +17,48 @@ class UndoneTasksScreen extends StatefulWidget {
 class _UndoneTasksScreenState extends State<UndoneTasksScreen> {
   TextEditingController titleEditController = TextEditingController();
 
+  List<Task> undoneTaskList = [];
+
+  ///
+  Future<void> getUndoneTaskList() async {
+    final collection = FirebaseFirestore.instance.collection('task');
+    final snapshot = await collection.where('is_done', isEqualTo: false).get();
+
+    snapshot.docs.forEach((element) {
+      final undoneTask = Task(
+        title: element['title'],
+        isDone: element['is_done'],
+        // ignore: avoid_dynamic_calls
+        createdAt: element['createdAt'].toDate(),
+      );
+
+      undoneTaskList.add(undoneTask);
+    });
+
+    setState(() {});
+  }
+
+  ///
+  @override
+  void initState() {
+    super.initState();
+
+    getUndoneTaskList();
+  }
+
   ///
   @override
   Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: undoneTaskList.length,
+      itemBuilder: (context, index) {
+        return Text(undoneTaskList[index].title!);
+      },
+    );
+
+    /*
+
+
     return ListView.builder(
       itemCount: widget.undoneTasksList.length,
       itemBuilder: (context, index) {
@@ -114,5 +154,8 @@ class _UndoneTasksScreenState extends State<UndoneTasksScreen> {
         );
       },
     );
+
+
+    */
   }
 }
