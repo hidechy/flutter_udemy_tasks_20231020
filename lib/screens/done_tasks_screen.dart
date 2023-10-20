@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/task.dart';
@@ -15,101 +16,49 @@ class DoneTasksScreen extends StatefulWidget {
 class _DoneTasksScreenState extends State<DoneTasksScreen> {
   TextEditingController titleEditController = TextEditingController();
 
+  List<Task> doneTaskList = [];
+
+  ///
+  Future<void> getDoneTaskList() async {
+    final collection = FirebaseFirestore.instance.collection('task');
+    final snapshot = await collection.where('is_done', isEqualTo: true).get();
+
+    snapshot.docs.forEach((element) {
+      final doneTask = Task(
+        id: element.id,
+        title: element['title'],
+        isDone: element['is_done'],
+        // ignore: avoid_dynamic_calls
+        createdAt: element['createdAt'].toDate(),
+      );
+
+      doneTaskList.add(doneTask);
+    });
+
+    setState(() {});
+  }
+
+  ///
+  @override
+  void initState() {
+    super.initState();
+
+    getDoneTaskList();
+  }
+
   ///
   @override
   Widget build(BuildContext context) {
+    final collection = FirebaseFirestore.instance.collection('task');
+
     return ListView.builder(
-      itemCount: widget.doneTasksList.length,
+      itemCount: doneTaskList.length,
       itemBuilder: (context, index) {
         return CheckboxListTile(
           controlAffinity: ListTileControlAffinity.leading,
-          value: widget.doneTasksList[index].isDone,
-          onChanged: (value) {
-            widget.doneTasksList[index].isDone = value;
-            widget.undoneTasksList.add(widget.doneTasksList[index]);
-            widget.doneTasksList.removeAt(index);
-
-            setState(() {});
-          },
-          title: Text(widget.doneTasksList[index].title!),
-          secondary: IconButton(
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.edit),
-                        title: const Text('edit'),
-                        onTap: () {
-                          Navigator.pop(context);
-
-                          showDialog(
-                              context: context,
-                              builder: (context) {
-                                return SimpleDialog(
-                                  backgroundColor: Colors.white.withOpacity(0.1),
-                                  title: Column(
-                                    children: [
-                                      TextField(
-                                        controller: titleEditController,
-                                        decoration: const InputDecoration(
-                                          hintText: 'title',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 20),
-                                      ElevatedButton(
-                                        onPressed: () {},
-                                        child: const Text('edit'),
-                                      ),
-                                      const SizedBox(height: 20),
-                                    ],
-                                  ),
-                                );
-                              });
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.delete),
-                        title: const Text('delete'),
-                        onTap: () {
-                          Navigator.pop(context);
-
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text('${widget.doneTasksList[index].title}を削除しますか？'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      widget.doneTasksList.removeAt(index);
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('はい'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('いいえ'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-            icon: const Icon(Icons.more_vert),
-          ),
+          value: doneTaskList[index].isDone,
+          onChanged: (value) => collection.doc(doneTaskList[index].id).update({'is_done': value}),
+          title: Text(doneTaskList[index].title!),
         );
       },
     );

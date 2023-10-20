@@ -1,6 +1,7 @@
 class Task {
-  Task({this.title, this.isDone, this.createdAt, this.updatedAt});
+  Task({this.id, this.title, this.isDone, this.createdAt, this.updatedAt});
 
+  String? id;
   String? title;
   bool? isDone;
   DateTime? createdAt;
